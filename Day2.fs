@@ -1,9 +1,6 @@
 namespace Day2
 
-module Part1 = 
-
-    open System
-    open System.IO
+module Shared = 
 
     type RPS =
         | Rock
@@ -20,6 +17,18 @@ module Part1 =
             | Rock -> 1
             | Paper -> 2
             | Scissors -> 3
+        static member forWin rps =
+            match rps with
+            | Rock -> Paper
+            | Paper -> Scissors
+            | Scissors -> Rock
+        static member forLoose rps =
+            match rps with
+            | Rock -> Scissors
+            | Paper -> Rock
+            | Scissors -> Paper
+        static member forDraw (rps:RPS) =
+            rps            
 
     type Score =
         | Loose = 0
@@ -37,11 +46,43 @@ module Part1 =
             | _ -> Score.Draw
         choiceScore + (int)wldScore
 
+
+module Part1 =
+
+    open Shared
+    open System
+    open System.IO
+
     let solution inputFile =
 
         File.ReadAllLines inputFile
         |> Array.map(fun line -> 
             let xs = line.Split(' ')
             evaluateRound(RPS.fromString xs[1]) (RPS.fromString xs[0])
+        )
+        |> Array.sum
+
+module Part2 =
+
+    open Shared
+    open System.IO
+
+    let evaluateMyChoice opponent you =
+        match you with
+        // Loose
+        |Rock -> RPS.forLoose opponent
+        // Draw
+        | Paper -> RPS.forDraw opponent
+        // win
+        | Scissors -> RPS.forWin opponent
+
+    let solution inputFile =
+
+        File.ReadAllLines inputFile
+        |> Array.map(fun line -> 
+            let xs = line.Split(' ')
+            let opponent, you = (RPS.fromString xs[0]), (RPS.fromString xs[1])
+            let newMyChoice = evaluateMyChoice opponent you
+            evaluateRound newMyChoice opponent
         )
         |> Array.sum
