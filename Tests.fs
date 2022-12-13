@@ -45,3 +45,15 @@ module Tests
         let answer = Day2.Part2.solution "Day2.txt"
 
         Assert.Equal(10398, answer)
+
+    [<Fact>]
+    let ``Day3 Part1 SplitString`` () =
+        let answer = Day3.Part1.splitString "ZZ"
+
+        Assert.Equal("Z", fst(answer))
+
+    [<Fact>]
+    let ``Day3 Part1`` () =
+        let answer = Day3.Part1.solution "Day3.txt"
+
+        Assert.Equal(8153, answer)
