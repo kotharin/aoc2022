@@ -1,7 +1,7 @@
 namespace Day6
 
-module Part1 = 
-    open System.IO
+module Shared = 
+   
 
     let hasNoRepeatingChars (chars:char array) =
         let map =
@@ -13,7 +13,7 @@ module Part1 =
 
         Map.count map = chars.Length
 
-    let getMarker (data: char array) =
+    let getMarker (data: char array) numOfUniqueChars=
 
         let rec getMarkerRec (d:char array) start length =
 
@@ -24,10 +24,24 @@ module Part1 =
             else
                 getMarkerRec d (start + 1) length
         
-        getMarkerRec data 0 4
+        getMarkerRec data 0 numOfUniqueChars
 
+module Part1 =
+
+    open System.IO
+    open Shared
     let solution inputFile =
 
         let data = (File.ReadAllText inputFile).ToCharArray()
 
-        getMarker data
+        getMarker data 4
+
+module Part2 =
+
+    open System.IO
+    open Shared
+    let solution inputFile =
+
+        let data = (File.ReadAllText inputFile).ToCharArray()
+
+        getMarker data 14
