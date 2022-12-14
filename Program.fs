@@ -11,7 +11,8 @@
         //let answer = Day2.Part2.solution "Day2.txt"
         //let answer = Day3.Part1.solution "Day3.txt"
         //let answer = Day3.Part2.solution "Day3.txt"
-        let answer = Day4.Part1.solution "Day4.txt"
+        //let answer = Day4.Part1.solution "Day4.txt"
+        let answer = Day4.Part2.solution "Day4.txt"
 
         printfn "answer: %A" answer
 

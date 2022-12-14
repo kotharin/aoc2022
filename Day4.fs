@@ -1,9 +1,7 @@
 namespace Day4
 
-module Part1 = 
+module Shared =
 
-    open System.IO
-    
     type Section = {
         start: int
         stop : int
@@ -34,10 +32,33 @@ module Part1 =
                 ((pairs.Section2.start <= pairs.Section1.start) && (pairs.Section2.stop >= pairs.Section1.stop))) then
                 true
             else false
+        static member hasOverlap pairs =
+            if ((pairs.Section1.start <= pairs.Section2.stop) && (pairs.Section1.start >= pairs.Section2.start) ||
+                (pairs.Section1.stop <= pairs.Section2.stop) && (pairs.Section1.stop >= pairs.Section2.start )) ||
+                ((pairs.Section2.start <= pairs.Section1.stop) && (pairs.Section2.start >= pairs.Section1.start) ||
+                (pairs.Section2.stop <= pairs.Section1.stop) && (pairs.Section2.stop >= pairs.Section1.start )) then
+                true
+            else false
+
+
+module Part1 = 
+
+    open System.IO
+    open Shared
 
     let solution inputFile =
 
         File.ReadAllLines inputFile
         |> Array.map(Pairs.parse)
         |> Array.filter Pairs.hasFullOverlap
+        |> Array.length
+
+module Part2 =
+
+    open System.IO
+    open Shared
+    let solution inputFile =
+        File.ReadAllLines inputFile
+        |> Array.map(Pairs.parse)
+        |> Array.filter Pairs.hasOverlap
         |> Array.length
