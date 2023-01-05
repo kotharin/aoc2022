@@ -1,6 +1,6 @@
 namespace Day7
 
-module Part1 = 
+module Shared = 
 
     open System.IO
 
@@ -70,10 +70,8 @@ module Part1 =
             size + subTreeSize + fileSizes
         dirSize dir allDirectories 0
 
-    let solution inputFile =
+    let extractDirectoryInfo lines =
         
-        let lines = File.ReadAllLines inputFile
-
         let root = {
             Name = "-/"
             Dirs = List.empty
@@ -88,35 +86,46 @@ module Part1 =
             Parent = None
         }
 
-        let _, allDirectories =
-            lines
-            |> Array.fold (fun (ct,allDirs) line ->
-                
-                match Action.parse line with
-                | List  ->
-                    ct, allDirs
-                | ChangeDirectory dir ->
-                    let dirName = (ct.Name + "-" + dir)
-                    //printfn "dir:%s" dirName
-                    //printfn "pd:%A" ct.Dirs
-                    // Get the current dir tree
-                    // if parent (..), get that from dictionary
-                    let newCT =
-                        if (dir = "..") then
-                            Map.find ct.Parent.Value allDirs
-                        else
-                            List.find (fun t -> t.Name = dirName) ct.Dirs
-                    newCT, allDirs
-                | Dir d -> 
-                    // add to list of dirs
-                    let newCT = Tree.addDir d ct
-                    newCT, (Map.add ct.Name newCT allDirs)
-                | FileInfo fd -> 
-                    let newCT = Tree.addFile fd ct
-                    newCT, (Map.add ct.Name newCT allDirs) 
-            ) (tree, Map.empty)
+        lines
+        |> Array.fold (fun (ct,allDirs) line ->
+            
+            match Action.parse line with
+            | List  ->
+                ct, allDirs
+            | ChangeDirectory dir ->
+                let dirName = (ct.Name + "-" + dir)
+                //printfn "dir:%s" dirName
+                //printfn "pd:%A" ct.Dirs
+                // Get the current dir tree
+                // if parent (..), get that from dictionary
+                let newCT =
+                    if (dir = "..") then
+                        Map.find ct.Parent.Value allDirs
+                    else
+                        List.find (fun t -> t.Name = dirName) ct.Dirs
+                newCT, allDirs
+            | Dir d -> 
+                // add to list of dirs
+                let newCT = Tree.addDir d ct
+                newCT, (Map.add ct.Name newCT allDirs)
+            | FileInfo fd -> 
+                let newCT = Tree.addFile fd ct
+                newCT, (Map.add ct.Name newCT allDirs) 
+        ) (tree, Map.empty)
+        |> snd
         //printfn "AD:%A" allDirectories
         // Get sizes and filter and sum
+        
+module Part1 = 
+
+    open System.IO
+    open Shared
+
+    let solution inputFile = 
+        let lines = File.ReadAllLines inputFile
+
+        let allDirectories = extractDirectoryInfo lines
+
         allDirectories.Keys
         |> Seq.map (fun dir ->
             dir, (directorySize dir allDirectories)
@@ -125,4 +134,36 @@ module Part1 =
             size <= 100000
         )
         |> Seq.sumBy (fun (d,s) -> s) 
-        
+
+module Part2 = 
+
+    open System.IO
+    open Shared
+
+    let solution inputFile =
+
+        let TOTAL_DISK_SPACE = 70000000
+        let REQUIRED_SPACE = 30000000
+
+        let lines = File.ReadAllLines inputFile
+
+        let allDirectories = extractDirectoryInfo lines
+
+        let directorySizes, listOfSizes =
+            allDirectories.Keys
+            |> Seq.fold (fun state dir ->
+                let map, list = state
+                let size = (directorySize dir allDirectories)
+                Map.add dir size map, (dir, size)::list
+            ) (Map.empty, List.empty)
+
+        let rootSize = Map.find "-/" directorySizes
+
+        let unusedSpace =  TOTAL_DISK_SPACE - rootSize
+
+        let spaceNeeded = REQUIRED_SPACE - unusedSpace
+
+        listOfSizes
+        |> List.filter (fun (name, size) -> size >= spaceNeeded)
+        |> List.minBy (fun (name, size) -> size)
+        |> snd
