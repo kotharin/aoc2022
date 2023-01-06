@@ -1,7 +1,29 @@
 namespace Day8
 
+module Shared = 
+
+    let createMatrixMap maxRows maxCols (lines:string[]) =
+        lines
+        |> Array.fold(fun state line ->
+            let row,matrx = state
+            // get each columns and set in array
+            let _,_,mx =
+                line.ToCharArray()
+                |> Array.fold(fun rowState c ->
+                    let cr,cc,m  = rowState
+
+                    Array2D.set m cr cc ((int)c - 48)
+
+                    (cr, cc+1, m)
+                ) (row, 0, matrx)
+            (row+1), mx
+        ) (0,(Array2D.zeroCreate<int> maxRows maxCols))
+        |> snd
+
+
 module Part1 = 
     open System.IO
+    open Shared
 
     type Visibility =
         | None = 0b0000
@@ -56,23 +78,7 @@ module Part1 =
 
         let maxCols = lines.[0].Length
 
-        let matrix = 
-            lines
-            |> Array.fold(fun state line ->
-                let row,matrx = state
-                // get each columns and set in array
-                let _,_,mx =
-                    line.ToCharArray()
-                    |> Array.fold(fun rowState c ->
-                        let cr,cc,m  = rowState
-
-                        Array2D.set m cr cc ((int)c - 48)
-
-                        (cr, cc+1, m)
-                    ) (row, 0, matrx)
-                (row+1), mx
-            ) (0,(Array2D.zeroCreate<int> maxRows maxCols))
-            |> snd
+        let matrix = createMatrixMap maxRows maxCols lines
 
         // iterate through the populated matrix and get visibility
         let _, visibilityCount = 
@@ -103,3 +109,71 @@ module Part1 =
             ) (matrix, 0)
 
         visibilityCount
+
+module Part2 = 
+
+    open System.IO
+    open Shared
+
+    let getCountOfTreesVisible data currentTreeValue =
+        let smallerTrees = Array.takeWhile (fun i -> i < currentTreeValue) data
+        // If array length > smallertTrees then there must be a tree as tall or taller
+        // than current value imediately after . Add 1 to the count
+        if ((data.Length) > smallerTrees.Length) then
+            smallerTrees.Length + 1
+        else
+            smallerTrees.Length
+
+    let splitCount data splitAt currentValue =
+        let part1,part2 = 
+            Array.splitAt splitAt data
+            |> (fun (a,b) -> 
+                    a, Array.removeAt 0 b
+                )
+        let part1Count = getCountOfTreesVisible (Array.rev part1) currentValue
+        let part2Count = getCountOfTreesVisible part2 currentValue
+
+        part1Count, part2Count
+
+    let scenicScore matrix row col =
+        
+        // Get the tree hiehgt at the current location
+        let currentValue = Array2D.get matrix row col
+
+        // Get tree count (scenic score) for left and right sides
+        let rowData = matrix.[row,*]
+        let leftCount, rightCount = splitCount rowData col currentValue
+        // Get tree count (scenic score) for top and bottom sides
+        let colData = matrix.[*,col]
+        let topCount, bottomCount = splitCount colData row currentValue
+
+        leftCount * rightCount * topCount * bottomCount
+
+    let solution inputFile =
+        let lines = File.ReadAllLines inputFile
+
+        let maxRows = Array.length lines
+
+        let maxCols = lines.[0].Length
+
+        let matrix = createMatrixMap maxRows maxCols lines
+
+        [|0..maxRows - 1|]
+        |> Array.fold (fun state row ->
+            let currMax = state
+            let _, max = 
+                [|0..maxCols - 1|]
+                |> Array.fold(fun state col ->
+                    let currRow, cMax = state
+                    // Get the scenic score for the current location
+                    let scenicScore = scenicScore matrix currRow col
+                    //printfn "row:%i, col:%i, sc:%i" currRow col scenicScore
+                    // Reset max if needed
+                    let newMax =
+                        if (scenicScore > cMax) then
+                            scenicScore
+                        else cMax
+                    (currRow,newMax) 
+                )(row, currMax)
+            max
+        )(0)
